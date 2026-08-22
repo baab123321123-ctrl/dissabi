@@ -27,9 +27,22 @@ jobs:
         # Bağımlılıkları ekle
         sed -i '/dependencies:/a \  supabase_flutter: ^2.0.0\n  agora_rtc_engine: ^6.3.0\n  permission_handler: ^11.0.0\n  image_picker: ^1.0.0' pubspec.yaml
 
-        # compileSdk / targetSdk'yi doğrudan app/build.gradle.kts içinde sabitle
+        # app modülünün compileSdk/targetSdk'sini sabitle
         sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 34/' android/app/build.gradle.kts
         sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 34/' android/app/build.gradle.kts
+
+        # TÜM alt modülleri (agora_rtc_engine dahil) afterEvaluate KULLANMADAN SDK 34'e zorla
+        cat >> android/build.gradle.kts << 'EOF'
+
+subprojects {
+    plugins.withType<com.android.build.gradle.BasePlugin> {
+        extensions.configure<com.android.build.gradle.BaseExtension> {
+            compileSdkVersion(34)
+            buildToolsVersion = "34.0.0"
+        }
+    }
+}
+EOF
     - name: Get Dependencies
       run: flutter pub get
     - name: Build APK
