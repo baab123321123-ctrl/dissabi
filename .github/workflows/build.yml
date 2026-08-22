@@ -16,7 +16,7 @@ jobs:
       uses: subosito/flutter-action@v2
       with:
         channel: 'stable'
-    - name: Create Flutter Project Skeleton & Force SDK 36
+    - name: Create Flutter Project Skeleton
       run: |
         cd ..
         flutter create temp_app --org com.dissabi.app
@@ -30,20 +30,22 @@ jobs:
         # app modülünün compileSdk/targetSdk'sini sabitle
         sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/' android/app/build.gradle.kts
         sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 36/' android/app/build.gradle.kts
-
-        # TÜM alt modülleri (agora_rtc_engine dahil) finalizeDsl ile SDK 36'ya zorla (AGP9-safe, afterEvaluate kullanmaz)
-        cat >> android/build.gradle.kts << 'EOF'
-        subprojects {
-            plugins.withType<com.android.build.gradle.BasePlugin> {
-                extensions.getByType(com.android.build.api.variant.AndroidComponentsExtension::class.java)
-                    .finalizeDsl {
-                        it.compileSdk = 36
-                    }
-            }
-        }
-        EOF
     - name: Get Dependencies
       run: flutter pub get
+    - name: Force compileSdk 36 on all plugin packages (pub-cache patch)
+      run: |
+        PUB_CACHE_DIR="${PUB_CACHE:-$HOME/.pub-cache}"
+        echo "Pub cache dizini: $PUB_CACHE_DIR"
+        find "$PUB_CACHE_DIR" \( -name "build.gradle" -o -name "build.gradle.kts" \) -path "*/android/*" | while read -r f; do
+          sed -i \
+            -e 's/compileSdkVersion[[:space:]]\+flutter\.compileSdkVersion/compileSdkVersion 36/' \
+            -e 's/compileSdkVersion[[:space:]]\+[0-9]\+/compileSdkVersion 36/' \
+            -e 's/compileSdk[[:space:]]*=[[:space:]]*flutter\.compileSdkVersion/compileSdk = 36/' \
+            -e 's/compileSdk[[:space:]]*=[[:space:]]*[0-9]\+/compileSdk = 36/' \
+            "$f"
+        done
+        echo "Yamalanan dosyalar:"
+        find "$PUB_CACHE_DIR" \( -name "build.gradle" -o -name "build.gradle.kts" \) -path "*/android/*" -exec grep -l "compileSdk" {} \;
     - name: Build APK
       run: flutter build apk --split-per-abi --release --no-tree-shake-icons
     - name: Upload APK Artifact
