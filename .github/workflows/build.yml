@@ -33,15 +33,17 @@ jobs:
         # Bağımlılıkları ekle
         sed -i '/dependencies:/a \  supabase_flutter: ^2.0.0\n  agora_rtc_engine: ^6.3.0\n  permission_handler: ^11.0.0\n  image_picker: ^1.0.0' pubspec.yaml
         
-        # Compile SDK sürümünü 34'e yükselt (Agora hatasını çözer)
-        sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/g' android/app/build.gradle
-        sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/g' android/app/build.gradle
+        # Compile SDK sürümünü 34'e yükselt
+        if [ -f android/app/build.gradle ]; then
+          sed -i 's/compileSdkVersion .*/compileSdkVersion 34/g' android/app/build.gradle
+          sed -i 's/compileSdk .*/compileSdk 34/g' android/app/build.gradle
+        fi
 
     - name: Get Dependencies
       run: flutter pub get
 
     - name: Build APK
-      run: flutter build apk --split-per-abi --release
+      run: flutter build apk --split-per-abi --release --no-tree-shake-icons
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
