@@ -1,0 +1,46 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+
+    - name: Create Flutter Project Skeleton
+      run: |
+        cd ..
+        flutter create temp_app --org com.dissabi.app
+        cp -r temp_app/android dissabi/
+        cp temp_app/pubspec.yaml dissabi/
+        cd dissabi
+        
+        # Dependency Ekleme
+        sed -i '/dependencies:/a \  supabase_flutter: ^2.0.0\n  agora_rtc_engine: ^6.3.0\n  permission_handler: ^11.0.0\n  image_picker: ^1.0.0' pubspec.yaml
+
+    - name: Get Dependencies
+      run: flutter pub get
+
+    - name: Build APK
+      run: flutter build apk --split-per-abi --release
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: dissabi-app
+        path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
