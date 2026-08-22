@@ -29,8 +29,6 @@ jobs:
         cp -r temp_app/android dissabi/
         cp temp_app/pubspec.yaml dissabi/
         cd dissabi
-        
-        # Dependency Ekleme
         sed -i '/dependencies:/a \  supabase_flutter: ^2.0.0\n  agora_rtc_engine: ^6.3.0\n  permission_handler: ^11.0.0\n  image_picker: ^1.0.0' pubspec.yaml
 
     - name: Get Dependencies
