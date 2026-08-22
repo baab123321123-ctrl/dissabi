@@ -32,20 +32,38 @@ jobs:
         sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 36/' android/app/build.gradle.kts
     - name: Get Dependencies
       run: flutter pub get
+    - name: Debug - agora_rtc_engine build.gradle (BEFORE patch)
+      run: |
+        PUB_CACHE_DIR="${PUB_CACHE:-$HOME/.pub-cache}"
+        echo "=== Pub cache: $PUB_CACHE_DIR ==="
+        AGORA_FILE=$(find "$PUB_CACHE_DIR" -ipath "*agora_rtc_engine*/android/build.gradle*" | head -n 1)
+        echo "=== Bulunan dosya: $AGORA_FILE ==="
+        if [ -n "$AGORA_FILE" ]; then
+          cat "$AGORA_FILE"
+        else
+          echo "!!! agora_rtc_engine build.gradle bulunamadı, pub-cache içeriği listeleniyor:"
+          find "$PUB_CACHE_DIR" -iname "*agora*" -maxdepth 6
+        fi
     - name: Force compileSdk 36 on all plugin packages (pub-cache patch)
       run: |
         PUB_CACHE_DIR="${PUB_CACHE:-$HOME/.pub-cache}"
-        echo "Pub cache dizini: $PUB_CACHE_DIR"
         find "$PUB_CACHE_DIR" \( -name "build.gradle" -o -name "build.gradle.kts" \) -path "*/android/*" | while read -r f; do
-          sed -i \
-            -e 's/compileSdkVersion[[:space:]]\+flutter\.compileSdkVersion/compileSdkVersion 36/' \
-            -e 's/compileSdkVersion[[:space:]]\+[0-9]\+/compileSdkVersion 36/' \
-            -e 's/compileSdk[[:space:]]*=[[:space:]]*flutter\.compileSdkVersion/compileSdk = 36/' \
-            -e 's/compileSdk[[:space:]]*=[[:space:]]*[0-9]\+/compileSdk = 36/' \
+          sed -i -E \
+            -e 's/compileSdkVersion[[:space:]]*\(?[[:space:]]*flutter\.compileSdkVersion[[:space:]]*\)?/compileSdkVersion 36/g' \
+            -e 's/compileSdkVersion[[:space:]]*\(?[[:space:]]*[0-9]+[[:space:]]*\)?/compileSdkVersion 36/g' \
+            -e 's/compileSdk[[:space:]]*=[[:space:]]*flutter\.compileSdkVersion/compileSdk = 36/g' \
+            -e 's/compileSdk[[:space:]]*=[[:space:]]*[0-9]+/compileSdk = 36/g' \
+            -e 's/android\.compileSdkVersion[[:space:]]*=[[:space:]]*[0-9]+/android.compileSdkVersion = 36/g' \
             "$f"
         done
-        echo "Yamalanan dosyalar:"
-        find "$PUB_CACHE_DIR" \( -name "build.gradle" -o -name "build.gradle.kts" \) -path "*/android/*" -exec grep -l "compileSdk" {} \;
+    - name: Debug - agora_rtc_engine build.gradle (AFTER patch)
+      run: |
+        PUB_CACHE_DIR="${PUB_CACHE:-$HOME/.pub-cache}"
+        AGORA_FILE=$(find "$PUB_CACHE_DIR" -ipath "*agora_rtc_engine*/android/build.gradle*" | head -n 1)
+        if [ -n "$AGORA_FILE" ]; then
+          echo "=== Patch sonrası: $AGORA_FILE ==="
+          cat "$AGORA_FILE"
+        fi
     - name: Build APK
       run: flutter build apk --split-per-abi --release --no-tree-shake-icons
     - name: Upload APK Artifact
