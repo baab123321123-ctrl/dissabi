@@ -33,16 +33,15 @@ jobs:
 
         # TÜM alt modülleri (agora_rtc_engine dahil) afterEvaluate KULLANMADAN SDK 34'e zorla
         cat >> android/build.gradle.kts << 'EOF'
-
-subprojects {
-    plugins.withType<com.android.build.gradle.BasePlugin> {
-        extensions.configure<com.android.build.gradle.BaseExtension> {
-            compileSdkVersion(34)
-            buildToolsVersion = "34.0.0"
+        subprojects {
+            plugins.withType<com.android.build.gradle.BasePlugin> {
+                extensions.configure<com.android.build.gradle.BaseExtension> {
+                    compileSdkVersion(34)
+                    buildToolsVersion = "34.0.0"
+                }
+            }
         }
-    }
-}
-EOF
+        EOF
     - name: Get Dependencies
       run: flutter pub get
     - name: Build APK
