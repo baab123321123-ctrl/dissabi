@@ -22,7 +22,7 @@ jobs:
       with:
         channel: 'stable'
 
-    - name: Create Flutter Project Skeleton & Fix SDK
+    - name: Create Flutter Project Skeleton & Force SDK 34
       run: |
         cd ..
         flutter create temp_app --org com.dissabi.app
@@ -33,11 +33,17 @@ jobs:
         # Bağımlılıkları ekle
         sed -i '/dependencies:/a \  supabase_flutter: ^2.0.0\n  agora_rtc_engine: ^6.3.0\n  permission_handler: ^11.0.0\n  image_picker: ^1.0.0' pubspec.yaml
         
-        # Compile SDK sürümünü 34'e yükselt
-        if [ -f android/app/build.gradle ]; then
-          sed -i 's/compileSdkVersion .*/compileSdkVersion 34/g' android/app/build.gradle
-          sed -i 's/compileSdk .*/compileSdk 34/g' android/app/build.gradle
-        fi
+        # Gradle ve SDK Sürümlerini SDK 34'e Zorla
+        echo "subprojects {
+            afterEvaluate { project ->
+                if (project.hasProperty('android')) {
+                    project.android {
+                        compileSdkVersion 34
+                        buildToolsVersion '34.0.0'
+                    }
+                }
+            }
+        }" >> android/build.gradle
 
     - name: Get Dependencies
       run: flutter pub get
